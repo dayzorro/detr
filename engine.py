@@ -14,13 +14,33 @@ from datasets.coco_eval import CocoEvaluator
 from datasets.panoptic_eval import PanopticEvaluator
 
 
+
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
                     device: torch.device, epoch: int, max_norm: float = 0):
+    """
+    Function: train_one_epoch
+    训练一个epoch
+
+    Parameters:
+        model:模型
+        criterion:衡量公式
+        data_loader
+        optimizer:优化器
+        device
+        epoch
+        max_norm: ???
+    Returns:
+
+    """
+
     model.train()
     criterion.train()
+    # metric_logger 是参数日志类
     metric_logger = utils.MetricLogger(delimiter="  ")
+    # learning_rate 学习率
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
+    # class_error 类异常
     metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
     header = 'Epoch: [{}]'.format(epoch)
     print_freq = 10
@@ -32,6 +52,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
         weight_dict = criterion.weight_dict
+        # 在计算LOSS的时候是逐层计算，得到每一层的LOSS和WEIGHT，并累计求和
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
 
         # reduce losses over all GPUs for logging purposes
@@ -43,7 +64,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         losses_reduced_scaled = sum(loss_dict_reduced_scaled.values())
 
         loss_value = losses_reduced_scaled.item()
-
+        # 如果数值是INF or NAN 直接退出或者报错
         if not math.isfinite(loss_value):
             print("Loss is {}, stopping training".format(loss_value))
             print(loss_dict_reduced)
@@ -59,6 +80,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(class_error=loss_dict_reduced['class_error'])
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
     # gather the stats from all processes
+    # 把所有参数都同步
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}

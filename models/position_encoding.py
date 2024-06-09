@@ -77,6 +77,10 @@ class PositionEmbeddingLearned(nn.Module):
 
 
 def build_position_encoding(args):
+    """
+    Function: 构建 position_embedding
+    """
+
     N_steps = args.hidden_dim // 2
     if args.position_embedding in ('v2', 'sine'):
         # TODO find a better way of exposing other arguments

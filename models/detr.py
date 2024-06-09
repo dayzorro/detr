@@ -316,7 +316,7 @@ def build(args):
         # max_obj_id + 1, but the exact value doesn't really matter
         num_classes = 250
     device = torch.device(args.device)
-
+    # 构建 backbone
     backbone = build_backbone(args)
 
     transformer = build_transformer(args)
